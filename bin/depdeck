@@ -1,0 +1,60 @@
+#!/bin/zsh
+# depdeck — CLI launcher for the DepDeck menu bar app.
+# Usage: depdeck [start|stop|restart|status|build]   (no argument = start)
+
+APP_DIR="$HOME/Developer/DepDeck"
+BIN="$APP_DIR/.build/release/DepDeck"
+
+running_pid() { pgrep -f "$BIN" 2>/dev/null | head -1 }
+
+cmd_build() {
+  echo "Building DepDeck (release)…"
+  (cd "$APP_DIR" && swift build -c release) || return 1
+}
+
+cmd_start() {
+  if [[ -n "$(running_pid)" ]]; then
+    echo "DepDeck is already running (pid $(running_pid)) — look for 📦 in the menu bar."
+    return 0
+  fi
+  [[ -x "$BIN" ]] || cmd_build || return 1
+  nohup "$BIN" >/dev/null 2>&1 &
+  disown
+  sleep 1
+  if [[ -n "$(running_pid)" ]]; then
+    echo "DepDeck started (pid $(running_pid)) — check the menu bar for 📦."
+  else
+    echo "DepDeck failed to start. Run it in the foreground to see why:"
+    echo "  $BIN"
+    return 1
+  fi
+}
+
+cmd_stop() {
+  if [[ -n "$(running_pid)" ]]; then
+    pkill -f "$BIN"
+    echo "DepDeck stopped."
+  else
+    echo "DepDeck wasn't running."
+  fi
+}
+
+cmd_status() {
+  if [[ -n "$(running_pid)" ]]; then
+    echo "DepDeck is running (pid $(running_pid))."
+  else
+    echo "DepDeck is not running."
+  fi
+}
+
+case "${1:-start}" in
+  start)   cmd_start ;;
+  stop)    cmd_stop ;;
+  restart) cmd_stop; cmd_start ;;
+  status)  cmd_status ;;
+  build)   cmd_build && echo "Build complete. Run 'depdeck restart' to use it." ;;
+  *)
+    echo "Usage: depdeck [start|stop|restart|status|build]"
+    exit 1
+    ;;
+esac
