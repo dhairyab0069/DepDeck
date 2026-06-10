@@ -1,0 +1,132 @@
+#!/bin/zsh
+# academy — your DepDeck Academy coach.
+# Usage:
+#   ./academy check [1-5|all]   grade a stage (or everything)
+#   ./academy progress          scoreboard for all stages
+#   ./academy run               launch YOUR windowed app
+#   ./academy hint <stage>      a nudge, not the answer
+#   ./academy solution <stage>  full reference solution (last resort!)
+
+cd "$(dirname "$0")" || exit 1
+
+bold() { print -P "%B$1%b" }
+
+case "$1" in
+
+  check)
+    n="${2:-all}"
+    if [[ "$n" == "all" ]]; then
+      swift test
+    else
+      swift test --filter "Stage${n}Tests"
+    fi
+    ;;
+
+  progress)
+    bold "── DepDeck Academy scoreboard ──"
+    echo "(building & testing — first run takes a minute)"
+    for i in 1 2 3 4 5; do
+      if swift test --filter "Stage${i}Tests" >/dev/null 2>&1; then
+        echo "  Stage $i  ✅ passed"
+      else
+        echo "  Stage $i  ❌ not yet — ./academy check $i"
+      fi
+    done
+    echo "  Stage 6  🖥  visual check — ./academy run"
+    ;;
+
+  run)
+    bold "Building and launching your windowed DepDeck…"
+    swift run DepDeckWindowed
+    ;;
+
+  hint)
+    case "$2" in
+      1) cat <<'EOF'
+Stage 1 hints
+ • 1.1  switch self { case .brew: return "Homebrew" … } — no default!
+ • 1.2  "\(manager.rawValue):\(name)"
+ • 1.3  one boolean expression with ||
+ • 1.4  disabled ? "Disabled" : "Deprecated"
+ • 1.5  disableReason ?? deprecationReason
+EOF
+      ;;
+      2) cat <<'EOF'
+Stage 2 hints
+ • The skeleton steps are written as comments above run(_:). Follow them
+   top to bottom — each step is one or two lines.
+ • arguments must be ["-lc", command]. The l matters: test 4 checks it.
+ • Read stdout BEFORE waitUntilExit() or big outputs can hang.
+ • Error case: ShellError.failed(command: command,
+     code: process.terminationStatus, output: stderrText.isEmpty ? stdoutText : stderrText)
+ • Compare with Tutorial chapter 3 if the continuation shape is confusing.
+EOF
+      ;;
+      3) cat <<'EOF'
+Stage 3 hints
+ • You need three structs: a response (formulae: [Formula]), a Formula,
+   and tiny nested ones for versions/installed.
+ • Every field that's "null" in the fixture must be Optional in Swift.
+ • Skeleton of the mapping:
+     return response.formulae.compactMap { f in
+         guard let current = f.installed.last?.version else { return nil }
+         return Package(manager: .brew, name: f.name, …)
+     }
+ • Property names must match the JSON keys EXACTLY (snake_case).
+EOF
+      ;;
+      4) cat <<'EOF'
+Stage 4 hints
+ • 4.1  for line in output.split(separator: "\n") { … }
+        guard !line.hasPrefix(" "), line.hasSuffix(":") else { continue }
+        then split on " ", check parts[1].hasPrefix("v").
+ • 4.2  let aParts = a.split(separator: ".").map { Int($0) ?? 0 }
+        loop 0..<max(aParts.count, bParts.count), treat missing as 0,
+        return on the FIRST differing component. After the loop: false.
+EOF
+      ;;
+      5) cat <<'EOF'
+Stage 5 hints
+ • 5.1  trim + lowercase first; guard !query.isEmpty else { return packages }
+        then packages.filter { $0.name.lowercased().contains(query) }
+ • 5.2  sorted { $0.name.lowercased() < $1.name.lowercased() }
+ • 5.3  literally one line of ?? chaining, in priority order.
+EOF
+      ;;
+      6) cat <<'EOF'
+Stage 6 hints
+ • 6.1  Structure: VStack(spacing: 0) { TextField(...); List(filtered) { … } }
+        filtered is a computed property calling YOUR filterPackages.
+ • Rows: VStack(alignment: .leading) with HStack(name + issue icon),
+        then optional description, then version Text.
+ • 6.2  if store.issuePackages.isEmpty { ContentUnavailableView(…) } else { List … }
+ • When stuck on syntax, the real app's Views folder is your reference —
+        but type it yourself, don't paste. Muscle memory is the point.
+EOF
+      ;;
+      *) echo "Usage: ./academy hint <1-6>" ;;
+    esac
+    ;;
+
+  solution)
+    if [[ ! "$2" =~ ^[1-6]$ ]]; then
+      echo "Usage: ./academy solution <1-6>"
+      exit 1
+    fi
+    bold "⚠️  Reading the solution robs you of the struggle that makes it stick."
+    printf "Have you tried './academy hint %s' first? Type yes to continue: " "$2"
+    read answer
+    if [[ "$answer" == "yes" ]]; then
+      ${PAGER:-less} "Solutions/Stage$2.md"
+    else
+      echo "Good call. Go wrestle with it a bit longer — then check the hint."
+    fi
+    ;;
+
+  *)
+    bold "DepDeck Academy"
+    sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'
+    echo
+    echo "Start with GUIDE.md, then: ./academy check 1"
+    ;;
+esac
