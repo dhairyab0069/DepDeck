@@ -134,6 +134,33 @@ screen lights up if anything on your system is deprecated.
 
 ---
 
+## Focus mode — `./academy focus` 🔒
+
+Built for ADHD brains and LLM temptation. FocusLock runs timed lockdown
+sessions while you work through the stages:
+
+- **Pick a length** (25/45/60/90 min) and **allowlist** your terminal and
+  editor. The session window floats in the corner with the countdown.
+- **Switch to any other app** → instant fullscreen lock screen, the app gets
+  hidden, and you're bounced back to your editor. Every attempt is counted.
+- **Open an LLM** (Claude desktop, ChatGPT, Perplexity — or Claude Code in a
+  terminal) → the screen goes red and **the timer pauses**. No credit for
+  cheated minutes. Close it and the session resumes automatically.
+- **Need the tutorial?** Don't unlock a browser — FocusLock has a built-in
+  offline viewer for it ("Open Tutorial" button).
+- **⌘Q is a confession**: quitting mid-session requires typing
+  *"I am choosing to stop early"*. Friction, not handcuffs.
+
+Honest limits: this is a commitment device, not a prison. `killall FocusLock`
+from your (allowed) terminal beats it, and your phone exists. Its job is to
+make drifting *loud and immediate* instead of silent — which is usually all
+an ADHD brain needs to snap back.
+
+Suggested rhythm: one 25-minute session ≈ one or two exercises. Stage 2
+deserves a 45.
+
+---
+
 ## After graduation
 
 - Do the real exercises: add **pip support to the real app** (Tutorial ch. 10) —

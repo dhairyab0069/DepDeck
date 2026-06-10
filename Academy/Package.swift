@@ -6,7 +6,8 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "AcademyCore", targets: ["AcademyCore"]),
-        .executable(name: "DepDeckWindowed", targets: ["DepDeckWindowed"])
+        .executable(name: "DepDeckWindowed", targets: ["DepDeckWindowed"]),
+        .executable(name: "FocusLock", targets: ["FocusLock"])
     ],
     targets: [
         // The logic you will write, stage by stage.
@@ -17,6 +18,10 @@ let package = Package(
             dependencies: ["AcademyCore"],
             path: "Sources/DepDeckWindowed"
         ),
+        // Focus lockdown for study sessions: ./academy focus
+        // (Deliberately does NOT depend on AcademyCore — it must work
+        //  even while your exercises are unfinished.)
+        .executableTarget(name: "FocusLock", path: "Sources/FocusLock"),
         // The tests that grade your work: ./academy check <stage>
         .testTarget(
             name: "AcademyTests",
