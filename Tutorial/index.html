@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Build DepDeck — Interactive Swift Tutorial</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel2: #1c2129;
+    --border: #2d333c;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #ff9f43;
+    --accent2: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --code-bg: #0a0d12;
+    --kw: #ff7b72;
+    --type: #ffa657;
+    --str: #a5d6ff;
+    --com: #7d8590;
+    --num: #79c0ff;
+    --attr: #d2a8ff;
+    --fn: #d2a8ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ───── Sidebar ───── */
+  aside {
+    width: 290px;
+    min-width: 290px;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .logo {
+    padding: 20px 18px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo h1 { font-size: 18px; }
+  .logo h1 span { color: var(--accent); }
+  .logo p { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .progress-wrap { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .progress-label { font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .progress-bar { height: 6px; background: var(--panel2); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--green)); border-radius: 3px; transition: width .4s ease; }
+  nav { flex: 1; padding: 8px; }
+  .chap-link {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%;
+    padding: 9px 10px;
+    border: none; background: none;
+    color: var(--muted);
+    font-size: 13px; text-align: left;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .chap-link:hover { background: var(--panel2); color: var(--text); }
+  .chap-link.active { background: var(--panel2); color: var(--text); }
+  .chap-num {
+    width: 22px; height: 22px; min-width: 22px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600;
+  }
+  .chap-link.active .chap-num { border-color: var(--accent); color: var(--accent); }
+  .chap-link.done .chap-num { background: var(--green); border-color: var(--green); color: #fff; }
+  .reset-btn {
+    margin: 10px 18px 16px;
+    padding: 7px;
+    font-size: 11px;
+    background: none; border: 1px solid var(--border); border-radius: 6px;
+    color: var(--muted); cursor: pointer;
+  }
+  .reset-btn:hover { color: var(--red); border-color: var(--red); }
+
+  /* ───── Main ───── */
+  main { flex: 1; overflow-y: auto; scroll-behavior: smooth; }
+  .chapter { display: none; max-width: 860px; margin: 0 auto; padding: 36px 40px 80px; }
+  .chapter.visible { display: block; animation: fadeIn .25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; } }
+
+  .chapter-tag { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+  .chapter h2 { font-size: 28px; margin: 6px 0 18px; }
+  .chapter h3 { font-size: 19px; margin: 30px 0 10px; }
+  .chapter p, .chapter li { font-size: 15px; line-height: 1.65; color: #c9d1d9; }
+  .chapter p { margin: 12px 0; }
+  .chapter ul, .chapter ol { margin: 12px 0 12px 24px; }
+  .chapter li { margin: 6px 0; }
+  code.inline {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    padding: 1px 6px; border-radius: 5px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    color: var(--accent2);
+  }
+  strong { color: var(--text); }
+
+  /* concept boxes */
+  .concept {
+    background: linear-gradient(180deg, rgba(88,166,255,.08), rgba(88,166,255,.03));
+    border: 1px solid rgba(88,166,255,.3);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 18px 0;
+  }
+  .concept .c-title { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--accent2); margin-bottom: 6px; }
+  .concept p { margin: 4px 0; font-size: 14px; }
+  .checkpoint {
+    background: linear-gradient(180deg, rgba(63,185,80,.08), rgba(63,185,80,.03));
+    border: 1px solid rgba(63,185,80,.35);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 18px 0;
+  }
+  .checkpoint .c-title { font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--green); margin-bottom: 6px; }
+  .checkpoint p { margin: 4px 0; font-size: 14px; }
+
+  /* ───── Code blocks ───── */
+  .codeblock { margin: 18px 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--code-bg); }
+  .code-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    font-size: 12px; color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  .copy-btn {
+    background: none; border: 1px solid var(--border); border-radius: 6px;
+    color: var(--muted); font-size: 11px; padding: 3px 10px; cursor: pointer;
+  }
+  .copy-btn:hover { color: var(--text); border-color: var(--muted); }
+  .code-body { overflow-x: auto; padding: 10px 0; }
+  .line { display: flex; min-width: max-content; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; line-height: 1.6; }
+  .ln { width: 44px; min-width: 44px; text-align: right; padding-right: 14px; color: #3d444d; user-select: none; }
+  .lc { white-space: pre; padding-right: 20px; }
+  .line.has-note { cursor: pointer; }
+  .line.has-note .ln { color: var(--accent); font-weight: 700; }
+  .line.has-note:hover { background: rgba(255,159,67,.08); }
+  .line.has-note .ln::after { content: " ●"; font-size: 8px; vertical-align: middle; }
+  .line.note-open { background: rgba(255,159,67,.1); }
+  .note-row {
+    display: none;
+    margin: 4px 14px 8px 44px;
+    padding: 10px 14px;
+    background: rgba(255,159,67,.07);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    font-size: 13.5px; line-height: 1.55; color: #c9d1d9;
+    white-space: normal;
+  }
+  .note-row.open { display: block; animation: fadeIn .2s ease; }
+  .note-row code { font-family: ui-monospace, Menlo, monospace; color: var(--accent2); font-size: 12.5px; }
+  .annot-hint { font-size: 11.5px; color: var(--muted); padding: 4px 14px 8px; border-top: 1px solid var(--border); }
+  .annot-hint b { color: var(--accent); }
+
+  /* syntax colors */
+  .tk-kw { color: var(--kw); }
+  .tk-type { color: var(--type); }
+  .tk-str { color: var(--str); }
+  .tk-com { color: var(--com); font-style: italic; }
+  .tk-num { color: var(--num); }
+  .tk-attr { color: var(--attr); }
+
+  /* ───── Quiz ───── */
+  .quiz {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin: 26px 0;
+  }
+  .quiz-tag { font-size: 11px; font-weight: 700; letter-spacing: .1em; color: var(--attr); text-transform: uppercase; }
+  .quiz-q { font-size: 15px; font-weight: 600; margin: 8px 0 12px; }
+  .quiz-opt {
+    display: block; width: 100%;
+    text-align: left;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    padding: 10px 14px;
+    margin: 7px 0;
+    cursor: pointer;
+    transition: border-color .15s;
+  }
+  .quiz-opt:hover { border-color: var(--accent2); }
+  .quiz-opt.correct { border-color: var(--green); background: rgba(63,185,80,.12); }
+  .quiz-opt.wrong { border-color: var(--red); background: rgba(248,81,73,.1); animation: shake .3s; }
+  .quiz-opt:disabled { cursor: default; opacity: .85; }
+  @keyframes shake { 25% { transform: translateX(-4px);} 75% { transform: translateX(4px);} }
+  .quiz-feedback { font-size: 13.5px; margin-top: 10px; display: none; line-height: 1.5; }
+  .quiz-feedback.show { display: block; }
+  .quiz-feedback.ok { color: var(--green); }
+  .quiz-feedback.no { color: var(--red); }
+
+  /* nav buttons */
+  .chapter-nav { display: flex; justify-content: space-between; margin-top: 40px; gap: 12px; }
+  .nav-btn {
+    padding: 11px 20px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+  }
+  .nav-btn:hover { border-color: var(--muted); }
+  .nav-btn.primary { background: var(--accent); border-color: var(--accent); color: #1a1208; }
+  .nav-btn.primary:hover { filter: brightness(1.1); }
+  .nav-btn:disabled { opacity: .35; cursor: default; }
+
+  .term { background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin: 14px 0; font-family: ui-monospace, Menlo, monospace; font-size: 13px; line-height: 1.7; overflow-x: auto; }
+  .term .prompt { color: var(--green); user-select: none; }
+  .term .out { color: var(--muted); }
+
+  kbd { background: var(--panel2); border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; font-size: 12px; font-family: ui-monospace, monospace; }
+</style>
+</head>
+<body>
+
+<aside>
+  <div class="logo">
+    <h1>📦 Dep<span>Deck</span> Tutorial</h1>
+    <p>Build a macOS menu bar dependency manager in Swift</p>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-label"><span>Progress</span><span id="progress-pct">0%</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+  </div>
+  <nav id="nav"></nav>
+  <button class="reset-btn" id="reset-btn">Reset progress</button>
+</aside>
+
+<main id="main">
+
+<!-- ════════════════ CHAPTER 1 ════════════════ -->
+<section class="chapter" data-id="setup" data-title="Project Setup">
+  <div class="chapter-tag">Chapter 1</div>
+  <h2>Project Setup with Swift Package Manager</h2>
+
+  <p>We're going to build <strong>DepDeck</strong>: a real macOS menu bar app that tracks
+  every CLI tool you've installed with Homebrew, npm, and cargo — showing updates,
+  flagging deprecated packages, and offering one-click <em>replace</em> or <em>delete</em>.</p>
+
+  <p>Surprise number one: you don't need Xcode. The <strong>Swift Package Manager (SPM)</strong>
+  ships with the Swift toolchain and can build full apps from a folder containing one
+  manifest file. Create the skeleton:</p>
+
+  <div class="term"><span class="prompt">$</span> mkdir -p ~/Developer/DepDeck/Sources/DepDeck/{Managers,Views}</div>
+
+  <p>Now the manifest. Click the <b style="color:var(--accent)">highlighted lines</b> in any
+  code block to see why they matter:</p>
+
+  <div class="codeblock" data-title="Package.swift">
+<script type="text/plain">// swift-tools-version:5.9
+import PackageDescription
+
+let package = Package(
+    name: "DepDeck",
+    platforms: [.macOS(.v14)],
+    targets: [
+        .executableTarget(
+            name: "DepDeck",
+            path: "Sources/DepDeck"
+        )
+    ]
+)</script>
+    <div class="note" data-line="1">This comment is <b>not optional</b> — SPM reads it to know which manifest format to parse. Delete it and the build fails.</div>
+    <div class="note" data-line="6">The <b>minimum</b> macOS version. <code>MenuBarExtra</code> (our menu bar scene) needs macOS 13+; we use 14 for the modern <code>onChange</code> API. This does not mean "only runs on 14" — it means "at least 14".</div>
+    <div class="note" data-line="8"><code>.executableTarget</code> produces a runnable binary. Libraries use <code>.target</code> instead. Every <code>.swift</code> file under <code>path</code> gets compiled into this target automatically — no file lists to maintain.</div>
+  </div>
+
+  <div class="concept">
+    <div class="c-title">💡 Swift Concept — Packages, Targets, Products</div>
+    <p>A <strong>package</strong> is a folder with a <code class="inline">Package.swift</code>. It contains
+    <strong>targets</strong> (groups of source files that compile together). An
+    <code class="inline">executableTarget</code> named <code class="inline">DepDeck</code> means
+    <code class="inline">swift build</code> produces <code class="inline">.build/debug/DepDeck</code> — an actual runnable program.</p>
+  </div>
+
+  <div class="checkpoint">
+    <div class="c-title">✅ Checkpoint</div>
+    <p>Run <code class="inline">swift build</code> inside the project folder. It should print
+    <code class="inline">Build complete!</code> — there's no code yet, and that's fine.</p>
+  </div>
+
+  <div class="quiz" data-answer="2">
+    <div class="quiz-tag">Quick check</div>
+    <p class="quiz-q">What does <code class="inline">platforms: [.macOS(.v14)]</code> declare?</p>
+    <button class="quiz-opt">The app only runs on exactly macOS 14</button>
+    <button class="quiz-opt">The SDK version used to compile</button>
+    <button class="quiz-opt">The minimum macOS version the app supports</button>
+    <div class="quiz-feedback"></div>
+  </div>
+</section>
+
+<!-- ════════════════ CHAPTER 2 ════════════════ -->
+<section class="chapter" data-id="models" data-title="Modeling the Domain">
+  <div class="chapter-tag">Chapter 2</div>
+  <h2>Modeling the Domain — Structs &amp; Enums</h2>
+
+  <p>Before any UI or shell commands, answer the question: <em>what is a package?</em>
+  In Swift you model data with <strong>structs</strong> (value types) and
+  <strong>enums</strong> (closed sets of cases). Start with the three package managers:</p>
+
+  <div class="codeblock" data-title="Sources/DepDeck/Models.swift">
+<script type="text/plain">enum PackageManager: String, CaseIterable, Identifiable {
+    case brew
+    case npm
+    case cargo
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .brew: return "Homebrew"
+        case .npm: return "npm"
+        case .cargo: return "cargo"
+        }
+    }
+}</script>
+    <div class="note" data-line="1">Three protocols at once: <code>String</code> gives each case a raw value (<code>"brew"</code>…), <code>CaseIterable</code> adds an automatic <code>allCases</code> array for looping in UI, and <code>Identifiable</code> lets SwiftUI lists tell items apart.</div>
+    <div class="note" data-line="8">A <b>computed property</b> — it stores nothing and runs on every access. The <code>switch</code> must be exhaustive: add a fourth case to the enum and the compiler <i>forces</i> you to handle it here. That's Swift's biggest safety win over passing strings around.</div>
+  </div>
+
+  <p>Now the star of the show — one struct that represents a package from <em>any</em> manager:</p>
+
+  <div class="codeblock" data-title="Sources/DepDeck/Models.swift (continued)">
+<script type="text/plain">struct Package: Identifiable, Hashable {
+    let manager: PackageManager
+    let name: String
+    var description: String?
+    var installedVersion: String
+    var latestVersion: String?
+    var outdated: Bool
+    var deprecated: Bool
+    var deprecationReason: String?
+    var disabled: Bool
+    var disableReason: String?
+    /// Suggested replacement formula/package, if the manager provides one.
+    var replacement: String?
+
+    var id: String { "\(manager.rawValue):\(name)" }
+
+    var hasIssue: Bool { deprecated || disabled }
+
+    var issueLabel: String { disabled ? "Disabled" : "Deprecated" }
+
+    var issueReason: String? { disableReason ?? deprecationReason }
+}</script>
+    <div class="note" data-line="2"><code>let</code> = immutable after creation, <code>var</code> = mutable. Identity fields (which manager, what name) can never change, so they're <code>let</code>.</div>
+    <div class="note" data-line="4"><code>String?</code> is an <b>Optional</b>: "a String or nothing." Swift forces you to unwrap it before use — there are no surprise <code>null</code> crashes like in many other languages.</div>
+    <div class="note" data-line="15">String interpolation <code>\(…)</code> builds <code>"brew:ripgrep"</code>. Combining manager + name means the same tool installed via two managers won't collide in a SwiftUI list.</div>
+    <div class="note" data-line="21"><code>??</code> is the <b>nil-coalescing operator</b>: use the left value unless it's nil, otherwise the right. Disabled is more severe than deprecated, so its reason wins.</div>
+  </div>
+
+  <div class="concept">
+    <div class="c-title">💡 Swift Concept — Value Types</div>
+    <p>Structs are <strong>copied</strong> on assignment, not shared. Hand a <code class="inline">Package</code>
+    to a view and the view gets its own copy — nobody can mutate it behind your back.
+    Shared <em>mutable</em> state will live in exactly one place: the Store (Chapter 6).</p>
+  </div>
+
+  <div class="quiz" data-answer="0">
+    <div class="quiz-tag">Quick check</div>
+    <p class="quiz-q">Why make <code class="inline">displayName</code> a computed property with a <code class="inline">switch</code> instead of storing a string per case?</p>
+    <button class="quiz-opt">Adding a new enum case makes the compiler force us to update the switch</button>
+    <button class="quiz-opt">Computed properties are faster than stored ones</button>
+    <button class="quiz-opt">Enums can't have stored properties on cases, so there's no other way</button>
+    <div class="quiz-feedback"></div>
+  </div>
+</section>
+
+<!-- ════════════════ CHAPTER 3 ════════════════ -->
+<section class="chapter" data-id="shell" data-title="Running Shell Commands">
+  <div class="chapter-tag">Chapter 3</div>
+  <h2>Running Shell Commands with async/await</h2>
+
+  <p>DepDeck is fundamentally a friendly UI over <code class="inline">brew</code>,
+  <code class="inline">npm</code>, and <code class="inline">cargo</code>. So we need one rock-solid
+  primitive: <em>run a command, give me its output, or throw a useful error</em>. First, the error type:</p>
+
+  <div class="codeblock" data-title="Sources/DepDeck/Shell.swift">
+<script type="text/plain">enum ShellError: LocalizedError {
+    case failed(command: String, code: Int32, output: String)
+
+    var errorDescription: String? {
+        switch self {
+        case .failed(let command, let code, let output):
+            let trimmed = output.trimmingCharacters(in: .whitespacesAndNewlines)
+            return "`\(command)` exited with code \(code)\(trimmed.isEmpty ? "" : ":\n\(trimmed)")"
+        }
+    }
+}</script>
+    <div class="note" data-line="2">An enum case with <b>associated values</b> — payload data attached to the case. This is how Swift models "an error <i>plus</i> its context" without stringly-typed exceptions.</div>
+    <div class="note" data-line="4">Conforming to <code>LocalizedError</code> and implementing <code>errorDescription</code> means <code>error.localizedDescription</code> anywhere in the app shows our friendly message — which we surface in the UI's error banner later.</div>
+  </div>
+
+  <p>Now the workhorse. <code class="inline">Process</code> is Apple's API for spawning child
+  processes, but it's callback/blocking-based. We bridge it into async/await:</p>
+
+  <div class="codeblock" data-title="Sources/DepDeck/Shell.swift (continued)">
+<script type="text/plain">enum Shell {
+    /// Runs a command through a login shell so brew/cargo/npm are on PATH.
+    @discardableResult
+    static func run(_ command: String) async throws -> String {
+        try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let process = Process()
+                process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+                process.arguments = ["-lc", command]
+
+                let stdout = Pipe()
+                let stderr = Pipe()
+                process.standardOutput = stdout
+                process.standardError = stderr
+
+                do {
+                    try process.run()
+                } catch {
+                    continuation.resume(throwing: error)
+                    return
+                }
+
+                // Drain both pipes concurrently so neither fills and blocks.
+                var errData = Data()
+                let errDone = DispatchSemaphore(value: 0)
+                DispatchQueue.global(qos: .userInitiated).async {
+                    errData = stderr.fileHandleForReading.readDataToEndOfFile()
+                    errDone.signal()
+                }
+                let outData = stdout.fileHandleForReading.readDataToEndOfFile()
+                errDone.wait()
+                process.waitUntilExit()
+
+                let out = String(data: outData, encoding: .utf8) ?? ""
+                let err = String(data: errData, encoding: .utf8) ?? ""
+
+                if process.terminationStatus == 0 {
+                    continuation.resume(returning: out)
+                } else {
+                    continuation.resume(throwing: ShellError.failed(
+                        command: command,
+                        code: process.terminationStatus,
+                        output: err.isEmpty ? out : err
+                    ))
+                }
+            }
+        }
+    }
+}</script>
+    <div class="note" data-line="1">An enum with <b>no cases</b> can never be instantiated — Swift's idiom for a pure namespace of static functions.</div>
+    <div class="note" data-line="3"><code>@discardableResult</code> silences the "result unused" warning when callers run something like <code>brew update</code> and don't care about the output text.</div>
+    <div class="note" data-line="4"><code>async throws -&gt; String</code> means callers write <code>let out = try await Shell.run("…")</code>. <code>await</code> marks where the caller may suspend; <code>try</code> marks that it can fail.</div>
+    <div class="note" data-line="5">The bridge between callback-world and async/await-world. You receive a <code>continuation</code>; call <code>resume(returning:)</code> or <code>resume(throwing:)</code> <b>exactly once</b> and the caller's <code>await</code> completes. "Checked" means the runtime yells at you if you resume twice or never.</div>
+    <div class="note" data-line="9"><code>zsh -lc</code> runs the command through a <b>login shell</b>, which loads your <code>~/.zprofile</code> — so the user's real PATH (<code>/opt/homebrew/bin</code>, <code>~/.cargo/bin</code>…) applies. A bare <code>Process</code> has a minimal PATH and would not find <code>brew</code> at all.</div>
+    <div class="note" data-line="23">⚠️ <b>The classic deadlock:</b> a pipe buffer holds ~64KB. If the child writes lots to stderr while we're only reading stdout, the child blocks waiting for stderr to drain — and we block waiting for stdout to end. Forever. Reading the two pipes on separate queues fixes it. Every CLI-wrapping app hits this bug eventually; ours is pre-fixed.</div>
+    <div class="note" data-line="37">Convention: exit status 0 = success, anything else = failure. We throw our typed <code>ShellError</code> with stderr attached so the UI can show <i>why</i> the command failed.</div>
+  </div>
+
+  <div class="checkpoint">
+    <div class="c-title">✅ Checkpoint</div>
+    <p><code class="inline">swift build</code> still succeeds. You now have the foundation every
+    client in the next two chapters is built on.</p>
+  </div>
+
+  <div class="quiz" data-answer="1">
+    <div class="quiz-tag">Quick check</div>
+    <p class="quiz-q">Why do we read stdout and stderr on separate queues?</p>
+    <button class="quiz-opt">It makes commands run roughly twice as fast</button>
+    <button class="quiz-opt">If one pipe's 64KB buffer fills while we read the other, the child process blocks forever</button>
+    <button class="quiz-opt">Process requires it — reading sequentially throws an exception</button>
+    <div class="quiz-feedback"></div>
+  </div>
+</section>
+
+<!-- ════════════════ CHAPTER 4 ════════════════ -->
+<section class="chapter" data-id="brew" data-title="The Homebrew Client">
+  <div class="chapter-tag">Chapter 4</div>
+  <h2>The Homebrew Client — JSON with Codable</h2>
+
+  <p>Homebrew can describe every installed formula as JSON — including the fields that
+  power our killer feature:</p>
+
+  <div class="term"><span class="prompt">$</span> brew info --json=v2 --installed
+<span class="out">{ "formulae": [ { "name": "wget", "outdated": false, "deprecated": false,
+  "deprecation_reason": null, "deprecation_replacement_formula": null, … } ] }</span></div>
+
+  <p>Swift's <strong>Codable</strong> system turns JSON into typed structs with zero
+  hand-written parsing. Declare structs whose property names match the JSON keys:</p>
+
+  <div class="codeblock" data-title="Sources/DepDeck/Managers/BrewClient.swift">
+<script type="text/plain">struct BrewClient {
+    private struct InfoResponse: Decodable {
+        let formulae: [Formula]
+    }
+
+    private struct Formula: Decodable {
+        struct Versions: Decodable { let stable: String? }
+        struct Installed: Decodable { let version: String }
+
+        let name: String
+        let desc: String?
+        let versions: Versions
+        let installed: [Installed]
+        let outdated: Bool
+        let deprecated: Bool
+        let deprecation_reason: String?
+        let deprecation_replacement_formula: String?
+        let deprecation_replacement_cask: String?
+        let disabled: Bool
+        let disable_reason: String?
+        let disable_replacement_formula: String?
+        let disable_replacement_cask: String?
+    }</script>
+    <div class="note" data-line="2"><code>private</code> because this struct mirrors brew's messy external format. The rest of the app only ever sees our clean <code>Package</code> model — this is the <b>adapter pattern</b>.</div>
+    <div class="note" data-line="7">Nested JSON objects become <b>nested structs</b>. <code>"versions": {"stable": "1.2"}</code> decodes into <code>Versions</code> automatically.</div>
+    <div class="note" data-line="16">We keep snake_case property names so they match the JSON keys exactly with no extra configuration. (Alternative: <code>decoder.keyDecodingStrategy = .convertFromSnakeCase</code> and camelCase names.)</div>
+    <div class="note" data-line="17">The payoff field: when brew deprecates a formula it often names a successor. This single optional string powers the "Replace with X" button in Chapter 9.</div>
+  </div>
+
+  <p>Decoding and mapping into our domain model:</p>
+
+  <div class="codeblock" data-title="BrewClient.swift (continued)">
+<script type="text/plain">    func installedPackages() async throws -> [Package] {
+        let json = try await Shell.run("brew info --json=v2 --installed")
+        guard let data = json.data(using: .utf8) else { return [] }
+        let response = try JSONDecoder().decode(InfoResponse.self, from: data)
+
+        return response.formulae.compactMap { formula in
+            guard let current = formula.installed.last?.version else { return nil }
+            return Package(
+                manager: .brew,
+                name: formula.name,
+                description: formula.desc,
+                installedVersion: current,
+                latestVersion: formula.versions.stable,
+                outdated: formula.outdated,
+                deprecated: formula.deprecated,
+                deprecationReason: formula.deprecation_reason,
+                disabled: formula.disabled,
+                disableReason: formula.disable_reason,
+                replacement: formula.disable_replacement_formula
+                    ?? formula.deprecation_replacement_formula
+                    ?? formula.disable_replacement_cask
+                    ?? formula.deprecation_replacement_cask
+            )
+        }
+    }</script>
+    <div class="note" data-line="4">One line replaces hundreds of lines of manual JSON walking. If the JSON shape doesn't match the structs, <code>decode</code> throws a precise error naming the missing key.</div>
+    <div class="note" data-line="6"><code>compactMap</code> = map <b>plus</b> drop nils. Any formula we return <code>nil</code> for simply vanishes from the result.</div>
+    <div class="note" data-line="7"><code>guard let</code> unwraps an optional or exits early — Swift's "keep the happy path un-indented" tool. <code>installed.last?.version</code> uses <b>optional chaining</b>: if the array is empty, the whole expression is nil.</div>
+    <div class="note" data-line="19">A chain of <code>??</code> picks the <i>first non-nil</i> replacement suggestion, preferring the more severe "disabled" replacement over the "deprecated" one.</div>
+  </div>
+
+  <p>The rest of the client is one-liners delegating to <code class="inline">Shell.run</code>:
+  <code class="inline">brew install '\(name)'</code>, <code class="inline">brew upgrade</code>,
+  <code class="inline">brew uninstall</code>, and <code class="inline">brew search --formula</code>
+  whose output we split into lines for search results.</p>
+
+  <div class="quiz" data-answer="2">
+    <div class="quiz-tag">Quick check</div>
+    <p class="quiz-q">What does <code class="inline">compactMap</code> do that <code class="inline">map</code> doesn't?</p>
+    <button class="quiz-opt">Runs the transform in parallel across CPU cores</button>
+    <button class="quiz-opt">Sorts the results after transforming</button>
+    <button class="quiz-opt">Discards elements for which the closure returns nil</button>
+    <div class="quiz-feedback"></div>
+  </div>
+</section>
+
+<!-- ════════════════ CHAPTER 5 ════════════════ -->
+<section class="chapter" data-id="clients" data-title="npm &amp; cargo Clients">
+  <div class="chapter-tag">Chapter 5</div>
+  <h2>npm &amp; cargo — Defensive Integration</h2>
+
+  <p>Same adapter pattern, two new flavors of "real-world tools are quirky."</p>
+
+  <h3>Quirk #1: npm exits 1 on purpose</h3>
+  <p><code class="inline">npm outdated -g --json</code> exits with code <strong>1</strong> whenever
+  anything is outdated — that's by design. Our <code class="inline">Shell.run</code> would throw,
+  so we defuse it:</p>
+
+  <div class="codeblock" data-title="Sources/DepDeck/Managers/NpmClient.swift">
+<script type="text/plain">// npm outdated exits 1 when anything is outdated; swallow that.
+let outdatedJSON = (try? await Shell.run("npm outdated -g --json || true")) ?? "{}"
+
+// `npm view <pkg> deprecated` prints the message only when deprecated.
+let deprecationMessage = (try? await Shell.run("npm view '\(name)' deprecated 2>/dev/null"))?
+    .trimmingCharacters(in: .whitespacesAndNewlines)</script>
+    <div class="note" data-line="2">Two safety nets stacked: <code>|| true</code> makes the shell command always exit 0, and <code>try?</code> converts any remaining thrown error into nil, which <code>?? "{}"</code> turns into an empty JSON object. "This is allowed to fail" — expressed in types.</div>
+    <div class="note" data-line="5">npm's deprecation check: the command prints the deprecation message <i>only if</i> the package is deprecated, otherwise nothing. An empty result = healthy package.</div>
+  </div>
+
+  <h3>Quirk #2: cargo speaks plain text</h3>
+  <p>No JSON available for installed crates — we parse <code class="inline">cargo install --list</code>,
+  whose format is "name vX.Y.Z:" lines followed by indented binary names:</p>
+
+  <div class="codeblock" data-title="Sources/DepDeck/Managers/CargoClient.swift">
+<script type="text/plain">// Top-level lines look like "ripgrep v14.1.0:"; indented lines are binaries.
+for line in output.split(separator: "\n") {
+    guard !line.hasPrefix(" "), line.hasSuffix(":") else { continue }
+    let parts = line.dropLast().split(separator: " ")
+    guard parts.count >= 2, parts[1].hasPrefix("v") else { continue }
+    let name = String(parts[0])
+    let version = String(parts[1].dropFirst())</script>
+    <div class="note" data-line="3">Two conditions in one <code>guard</code>, comma-separated (both must pass). Indented lines and non-header lines get skipped with <code>continue</code>.</div>
+    <div class="note" data-line="4"><code>dropLast()</code> trims the trailing <code>:</code>; <code>dropFirst()</code> below strips the <code>v</code> prefix from <code>v14.1.0</code>. Swift string slicing returns cheap views — wrap in <code>String(…)</code> to materialize.</div>
+  </div>
+
+  <p>Latest versions come from the crates.io HTTP API. Async/await makes a network
+  request feel like a function call:</p>
+
+  <div class="codeblock" data-title="CargoClient.swift (continued)">
+<script type="text/plain">private func latestVersion(of name: String) async throws -> String? {
+    guard let url = URL(string: "https://crates.io/api/v1/crates/\(name)") else { return nil }
+    var request = URLRequest(url: url)
+    request.setValue("DepDeck (local dependency dashboard)", forHTTPHeaderField: "User-Agent")
+    let (data, _) = try await URLSession.shared.data(for: request)
+    return try JSONDecoder().decode(CrateResponse.self, from: data).crate.max_stable_version
+}</script>
+    <div class="note" data-line="4">crates.io's API policy asks every client to identify itself with a <code>User-Agent</code>. Be a good API citizen — anonymous traffic may get blocked.</div>
+    <div class="note" data-line="5">One awaited line: send the request, suspend without blocking any thread, resume with <code>(Data, URLResponse)</code>. The tuple's second element is ignored with <code>_</code>.</div>
+  </div>
+
+  <div class="quiz" data-answer="0">
+    <div class="quiz-tag">Quick check</div>
+    <p class="quiz-q">What does <code class="inline">try?</code> do when the expression throws?</p>
+    <button class="quiz-opt">Returns nil instead of propagating the error</button>
+    <button class="quiz-opt">Retries the expression once before giving up</button>
+    <button class="quiz-opt">Crashes with a readable error message</button>
+    <div class="quiz-feedback"></div>
+  </div>
+</section>
+
+<!-- ════════════════ CHAPTER 6 ════════════════ -->
+<section class="chapter" data-id="store" data-title="The Store">
+  <div class="chapter-tag">Chapter 6</div>
+  <h2>The Store — Observable State</h2>
+
+  <p>Every screen needs the same data: the package list, what's busy, the last error.
+  That shared mutable state lives in exactly one object — the <strong>store</strong> —
+  and SwiftUI <em>observes</em> it.</p>
+
+  <div class="codeblock" data-title="Sources/DepDeck/Store.swift">
+<script type="text/plain">@MainActor
+final class DependencyStore: ObservableObject {
+    @Published var packages: [Package] = []
+    @Published var isRefreshing = false
+    @Published var busyPackageIDs: Set<String> = []
+    @Published var lastError: String?
+
+    @AppStorage("autoUpgrade") var autoUpgrade = false
+    @AppStorage("checkIntervalHours") var checkIntervalHours = 6.0
+
+    private let brew = BrewClient()
+    private let npm = NpmClient()
+    private let cargo = CargoClient()
+    private var timerTask: Task<Void, Never>?
+
+    var outdatedPackages: [Package] { packages.filter(\.outdated) }
+    var issuePackages: [Package] { packages.filter(\.hasIssue) }</script>
+    <div class="note" data-line="1"><code>@MainActor</code> guarantees every property access and method runs on the main thread — the only thread allowed to drive UI. The <i>compiler</i> enforces this; background code must <code>await</code> its way in.</div>
+    <div class="note" data-line="2">A <code>class</code>, not a struct: many views must share <i>one</i> instance. <code>ObservableObject</code> is the protocol that lets SwiftUI subscribe to it.</div>
+    <div class="note" data-line="3"><code>@Published</code> = "when this changes, re-render every view that reads it." That single line is the entire UI-update mechanism.</div>
+    <div class="note" data-line="8"><code>@AppStorage</code> reads/writes UserDefaults directly — settings persist across launches with zero save/load code. In Chapter 9 a <code>Toggle</code> binds straight to this.</div>
+    <div class="note" data-line="16"><code>\.outdated</code> is a <b>key path</b> — shorthand for <code>{ $0.outdated }</code>. Derived lists are computed, never stored: one source of truth.</div>
+  </div>
+
+  <h3>Refreshing all three managers in parallel</h3>
+
+  <div class="codeblock" data-title="Store.swift — refresh">
+<script type="text/plain">    func refresh(updateIndex: Bool) async {
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        lastError = nil
+        defer {
+            isRefreshing = false
+            lastRefreshed = Date()
+        }
+
+        if updateIndex {
+            do { try await brew.updateIndex() } catch { lastError = error.localizedDescription }
+        }
+
+        async let brewResult = gather { try await self.brew.installedPackages() }
+        async let npmResult = gather { try await self.npm.installedPackages() }
+        async let cargoResult = gather { try await self.cargo.installedPackages() }
+
+        let results = await [brewResult, npmResult, cargoResult]
+        packages = results.flatMap(\.0).sorted { $0.name.lowercased() < $1.name.lowercased() }
+        if let firstError = results.compactMap(\.1).first {
+            lastError = firstError
+        }
+    }</script>
+    <div class="note" data-line="5"><code>defer</code> runs when the scope exits <b>no matter how</b> — normal return, error, early exit. Swift's "finally." The spinner can never get stuck on.</div>
+    <div class="note" data-line="14"><code>async let</code> starts the work <i>immediately</i> and keeps going — all three clients run <b>concurrently</b>. Sequential <code>await</code>s would cost brew-time + npm-time + cargo-time; this costs only the slowest one.</div>
+    <div class="note" data-line="18">The single <code>await</code> collects all three results. <code>gather</code> is a tiny helper that catches each client's error so one broken manager can't sink the whole refresh.</div>
+  </div>
+
+  <h3>The background check loop</h3>
+
+  <div class="codeblock" data-title="Store.swift — schedulePeriodicChecks">
+<script type="text/plain">    func schedulePeriodicChecks() {
+        timerTask?.cancel()
+        let hours = max(checkIntervalHours, 0.5)
+        timerTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(hours * 3600))
+                guard let self, !Task.isCancelled else { return }
+                await self.refresh(updateIndex: true)
+                if self.autoUpgrade {
+                    await self.upgradeAll()
+                }
+            }
+        }
+    }</script>
+    <div class="note" data-line="4"><code>[weak self]</code> breaks a <b>retain cycle</b>: the store owns the task, and without <code>weak</code> the task would own the store right back — neither could ever be freed.</div>
+    <div class="note" data-line="6"><code>Task.sleep</code> <i>suspends</i> — it holds no thread hostage while waiting, unlike <code>Thread.sleep</code>.</div>
+    <div class="note" data-line="9">This is the "auto-update" feature, complete. The heavy lifting was already built; the feature is four lines.</div>
+  </div>
+
+  <p>One last pattern — every mutation (upgrade, uninstall, replace) wraps itself in
+  busy-tracking so rows can show spinners:</p>
+
+  <div class="codeblock" data-title="Store.swift — perform">
+<script type="text/plain">    private func perform(on package: Package, _ work: () async throws -> Void) async {
+        busyPackageIDs.insert(package.id)
+        defer { busyPackageIDs.remove(package.id) }
+        do {
+            try await work()
+            await refresh(updateIndex: false)
+        } catch {
+            lastError = error.localizedDescription
+        }
+    }</script>
+    <div class="note" data-line="1">The <code>work</code> parameter is a <b>closure</b> — a function passed as a value. Each caller hands in its own async operation; the busy-tracking and error handling are written once.</div>
+  </div>
+
+  <div class="quiz" data-answer="1">
+    <div class="quiz-tag">Quick check</div>
+    <p class="quiz-q">If brew takes 4s, npm 2s, cargo 1s — how long does the <code class="inline">async let</code> refresh take?</p>
+    <button class="quiz-opt">About 7 seconds (they queue up)</button>
+    <button class="quiz-opt">About 4 seconds (they run concurrently; the slowest wins)</button>
+    <button class="quiz-opt">About 1 second (the fastest result is used)</button>
+    <div class="quiz-feedback"></div>
+  </div>
+</section>
+
+<!-- ════════════════ CHAPTER 7 ════════════════ -->
+<section class="chapter" data-id="entry" data-title="MenuBarExtra Entry Point">
+  <div class="chapter-tag">Chapter 7</div>
+  <h2>The Entry Point — Living in the Menu Bar</h2>
+
+  <p>Time to make it an actual app. In SwiftUI, an app declares <strong>Scenes</strong>
+  rather than windows — and <code class="inline">MenuBarExtra</code> is a scene that lives
+  in the macOS menu bar:</p>
+
+  <div class="codeblock" data-title="Sources/DepDeck/DepDeckApp.swift">
+<script type="text/plain">import SwiftUI
+
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        // Menu bar only — no Dock icon.
+        NSApp.setActivationPolicy(.accessory)
+    }
+}
+
+@main
+struct DepDeckApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @StateObject private var store = DependencyStore()
+
+    var body: some Scene {
+        MenuBarExtra {
+            ContentView()
+                .environmentObject(store)
+        } label: {
+            let outdated = store.outdatedPackages.count
+            let issues = store.issuePackages.count
+            if issues > 0 {
+                Image(systemName: "shippingbox.fill")
+                Text("\(outdated)⚠︎\(issues)")
+            } else if outdated > 0 {
+                Image(systemName: "shippingbox.fill")
+                Text("\(outdated)")
+            } else {
+                Image(systemName: "shippingbox")
+            }
+        }
+        .menuBarExtraStyle(.window)
+    }
+}</script>
+    <div class="note" data-line="6"><code>.accessory</code> activation policy = menu bar only: no Dock icon, no entry in <kbd>⌘Tab</kbd>. This is an AppKit API, which is why we need the delegate escape hatch below.</div>
+    <div class="note" data-line="10"><code>@main</code> marks the program's entry point. No <code>main.swift</code>, no boilerplate — the <code>App</code> protocol synthesizes startup for you.</div>
+    <div class="note" data-line="12"><code>@NSApplicationDelegateAdaptor</code> is the official bridge for plugging an old-school AppKit delegate into a SwiftUI app — needed only for things SwiftUI can't express yet.</div>
+    <div class="note" data-line="13"><code>@StateObject</code> creates the store <b>once</b> and owns it for the app's lifetime. (Plain <code>@ObservedObject</code> here would recreate it on every re-render — a classic bug.)</div>
+    <div class="note" data-line="17"><code>.environmentObject(store)</code> injects the store into the view tree. Any descendant grabs it with <code>@EnvironmentObject</code> — no passing it through every initializer ("prop-drilling").</div>
+    <div class="note" data-line="20">The label is <b>live SwiftUI</b>: it reads <code>@Published</code> state, so when a background refresh finds 3 outdated packages, the menu bar badge changes to "3" by itself. No update code anywhere.</div>
+    <div class="note" data-line="32">Without this, clicking the icon shows a plain dropdown menu. <code>.window</code> style opens a real panel that can host any SwiftUI view — lists, text fields, buttons.</div>
+  </div>
+
+  <div class="checkpoint">
+    <div class="c-title">✅ Checkpoint</div>
+    <p>Once Chapter 8's <code class="inline">ContentView</code> exists, <code class="inline">swift run</code>
+    puts a 📦 in your menu bar. The badge text updates whenever the store's published state changes.</p>
+  </div>
+
+  <div class="quiz" data-answer="2">
+    <div class="quiz-tag">Quick check</div>
+    <p class="quiz-q">Why <code class="inline">@StateObject</code> instead of <code class="inline">@ObservedObject</code> for the store here?</p>
+    <button class="quiz-opt">@ObservedObject can't be used with classes</button>
+    <button class="quiz-opt">@StateObject is required for @MainActor classes</button>
+    <button class="quiz-opt">@StateObject creates and owns the object once; @ObservedObject would recreate it on re-renders</button>
+    <div class="quiz-feedback"></div>
+  </div>
+</section>
+
+<!-- ════════════════ CHAPTER 8 ════════════════ -->
+<section class="chapter" data-id="shell-ui" data-title="The UI Shell">
+  <div class="chapter-tag">Chapter 8</div>
+  <h2>The UI Shell — Declarative Layout</h2>
+
+  <p>SwiftUI is <strong>declarative</strong>: you don't mutate views, you <em>describe</em>
+  the UI for the current state, and the framework redraws what changed. The panel is a
+  vertical stack — header, tab bar, active tab, optional error banner:</p>
+
+  <div class="codeblock" data-title="Sources/DepDeck/Views/ContentView.swift">
+<script type="text/plain">struct ContentView: View {
+    @EnvironmentObject var store: DependencyStore
+    @State private var tab: Tab = .installed
+
+    var body: some View {
+        VStack(spacing: 0) {
+            header
+            Divider()
+            tabBar
+            Divider()
+
+            Group {
+                switch tab {
+                case .installed: InstalledView()
+                case .updates: UpdatesView()
+                case .issues: IssuesView()
+                case .search: SearchView()
+                case .settings: SettingsView()
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(width: 420, height: 480)
+    }</script>
+    <div class="note" data-line="2"><code>@EnvironmentObject</code> receives the store injected back in Chapter 7 — any view in the tree can declare this and get the shared instance.</div>
+    <div class="note" data-line="3"><code>@State</code> is view-local state. Assigning to <code>tab</code> triggers a re-render, the <code>switch</code> below picks a different view, done. That's tab navigation — no controller, no notifications.</div>
+    <div class="note" data-line="7"><code>header</code> and <code>tabBar</code> are private computed properties returning <code>some View</code> — the standard way to keep <code>body</code> readable instead of one 200-line expression.</div>
+    <div class="note" data-line="13">The enum drives everything: the tab bar loops <code>Tab.allCases</code> to render buttons, this switch renders content. Add a case → the compiler points at every spot to update.</div>
+  </div>
+
+  <p>The tab bar itself is just a loop of buttons with count badges — note how the
+  badge data comes straight from the store:</p>
+
+  <div class="codeblock" data-title="ContentView.swift — tabBar (excerpt)">
+<script type="text/plain">    ForEach(Tab.allCases) { item in
+        Button { tab = item } label: {
+            HStack(spacing: 4) {
+                Image(systemName: item.icon)
+                Text(item.rawValue)
+                if item == .updates && !store.outdatedPackages.isEmpty {
+                    badge(store.outdatedPackages.count, color: .blue)
+                }
+                if item == .issues && !store.issuePackages.isEmpty {
+                    badge(store.issuePackages.count, color: .orange)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }</script>
+    <div class="note" data-line="1"><code>ForEach</code> needs identifiable items — which is why <code>Tab</code> conforms to <code>Identifiable</code>. <code>CaseIterable</code> provides <code>allCases</code>.</div>
+    <div class="note" data-line="4"><code>Image(systemName:)</code> pulls from <b>SF Symbols</b> — Apple's built-in library of ~6000 icons. No image assets to manage.</div>
+    <div class="note" data-line="6">Views reading <code>store.outdatedPackages</code> re-render when it changes — so badges appear and disappear on their own as refreshes complete.</div>
+  </div>
+
+  <div class="concept">
+    <div class="c-title">💡 Swift Concept — <code>some View</code></div>
+    <p><code class="inline">some View</code> is an <strong>opaque return type</strong>: "this returns one
+    specific view type, but I'm not spelling out which." SwiftUI view types are deeply nested
+    generics (<code class="inline">VStack&lt;TupleView&lt;(…)&gt;&gt;</code>…) — <code class="inline">some View</code>
+    spares you from ever writing them.</p>
+  </div>
+
+  <div class="quiz" data-answer="0">
+    <div class="quiz-tag">Quick check</div>
+    <p class="quiz-q">What happens when <code class="inline">@State private var tab</code> is assigned a new value?</p>
+    <button class="quiz-opt">SwiftUI re-evaluates body and shows the view for the new tab</button>
+    <button class="quiz-opt">Nothing until you call reloadData() manually</button>
+    <button class="quiz-opt">The whole app restarts with the new value</button>
+    <div class="quiz-feedback"></div>
+  </div>
+</section>
+
+<!-- ════════════════ CHAPTER 9 ════════════════ -->
+<section class="chapter" data-id="features" data-title="Feature Views">
+  <div class="chapter-tag">Chapter 9</div>
+  <h2>Feature Views — Lists, Actions, Bindings</h2>
+
+  <h3>Filtering without storing</h3>
+  <p>The Installed tab filters as you type — and the filtered list is <em>computed</em>,
+  never stored. Derive, don't duplicate:</p>
+
+  <div class="codeblock" data-title="Sources/DepDeck/Views/InstalledView.swift">
+<script type="text/plain">struct InstalledView: View {
+    @EnvironmentObject var store: DependencyStore
+    @State private var filter = ""
+
+    private var filtered: [Package] {
+        let query = filter.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !query.isEmpty else { return store.packages }
+        return store.packages.filter { $0.name.lowercased().contains(query) }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            TextField("Filter installed packages…", text: $filter)
+                .textFieldStyle(.roundedBorder)
+                .padding(8)
+            List(filtered) { package in
+                PackageRow(package: package)
+            }
+            .listStyle(.plain)
+        }
+    }
+}</script>
+    <div class="note" data-line="5">Each keystroke updates <code>filter</code> → body re-evaluates → <code>filtered</code> recomputes → the list updates. Zero "search logic" wiring.</div>
+    <div class="note" data-line="13"><code>$filter</code> passes a <b>Binding</b> — a two-way read/write connection. The text field writes into our <code>@State</code> as the user types. The <code>$</code> prefix on any <code>@State</code>/<code>@AppStorage</code> property produces its binding.</div>
+    <div class="note" data-line="16"><code>List</code> + <code>Identifiable</code> items = done. This is why <code>Package.id</code> exists (Chapter 2).</div>
+  </div>
+
+  <h3>The Issues tab — deprecation handling</h3>
+  <p>The feature this app exists for. Each deprecated/disabled package shows its reason
+  and the available actions:</p>
+
+  <div class="codeblock" data-title="Sources/DepDeck/Views/IssuesView.swift (excerpt)">
+<script type="text/plain">    if let reason = package.issueReason {
+        Text(reason)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+    }
+
+    if store.busyPackageIDs.contains(package.id) {
+        ProgressView().controlSize(.small)
+    } else {
+        if let replacement = package.replacement {
+            Button("Replace with \(replacement)") {
+                Task { await store.replace(package, with: replacement) }
+            }
+            .controlSize(.small)
+        }
+        Button("Uninstall", role: .destructive) {
+            Task { await store.uninstall(package) }
+        }
+        .controlSize(.small)
+    }</script>
+    <div class="note" data-line="1"><code>if let</code> inside a view body: the <code>Text</code> simply doesn't exist when there's no reason. Conditional UI is just Swift control flow.</div>
+    <div class="note" data-line="7">The busy pattern pays off: while the store's <code>perform()</code> holds this package's id in <code>busyPackageIDs</code>, the buttons are replaced by a spinner. When <code>defer</code> removes the id, the buttons come back.</div>
+    <div class="note" data-line="11">Button actions are synchronous, so async work is wrapped in <code>Task { … }</code> — fire the operation and let the published state drive UI updates. Recall <code>replace</code> installs the successor <i>before</i> uninstalling the old tool, so you're never left with neither.</div>
+    <div class="note" data-line="16"><code>role: .destructive</code> tells macOS this action deletes something — it renders red automatically. Semantic styling beats hard-coded colors.</div>
+  </div>
+
+  <h3>Settings — bindings all the way down</h3>
+
+  <div class="codeblock" data-title="Sources/DepDeck/Views/SettingsView.swift (excerpt)">
+<script type="text/plain">    Toggle("Automatically install updates", isOn: store.$autoUpgrade)
+
+    Picker("Check for updates every", selection: store.$checkIntervalHours) {
+        Text("1 hour").tag(1.0)
+        Text("3 hours").tag(3.0)
+        Text("6 hours").tag(6.0)
+        Text("12 hours").tag(12.0)
+        Text("Daily").tag(24.0)
+    }
+    .onChange(of: store.checkIntervalHours) {
+        store.schedulePeriodicChecks()
+    }</script>
+    <div class="note" data-line="1">The payoff of <code>@AppStorage</code> from Chapter 6: this toggle reads <i>and persists</i> the setting with no save/load code anywhere. Flip it, quit, relaunch — still flipped.</div>
+    <div class="note" data-line="10"><code>onChange</code> reacts to the value changing: picking a new interval cancels the old background task and starts one with the new cadence.</div>
+  </div>
+
+  <div class="quiz" data-answer="1">
+    <div class="quiz-tag">Quick check</div>
+    <p class="quiz-q">In <code class="inline">TextField("…", text: $filter)</code>, what does the <code class="inline">$</code> do?</p>
+    <button class="quiz-opt">Marks the variable as observable by other views</button>
+    <button class="quiz-opt">Produces a Binding — a two-way connection the field can write back into</button>
+    <button class="quiz-opt">Escapes the string for safe display</button>
+    <div class="quiz-feedback"></div>
+  </div>
+</section>
+
+<!-- ════════════════ CHAPTER 10 ════════════════ -->
+<section class="chapter" data-id="ship" data-title="Build, Run, Ship">
+  <div class="chapter-tag">Chapter 10</div>
+  <h2>Build, Run, Ship 🚀</h2>
+
+  <p>Compile an optimized binary and launch it:</p>
+
+  <div class="term"><span class="prompt">$</span> cd ~/Developer/DepDeck
+<span class="prompt">$</span> swift build -c release
+<span class="out">Build complete! (6.12s)</span>
+<span class="prompt">$</span> .build/release/DepDeck &amp;</div>
+
+  <p>A 📦 appears in your menu bar. When packages are outdated it shows a count;
+  when something is deprecated, a ⚠︎ count joins it. To launch it at login, install
+  the LaunchAgent from <code class="inline">README.md</code>.</p>
+
+  <h3>What you learned</h3>
+  <ul>
+    <li><strong>SPM</strong> — building real apps with no Xcode project</li>
+    <li><strong>Enums &amp; structs</strong> — exhaustive switches, optionals, computed properties, value semantics</li>
+    <li><strong>async/await</strong> — continuations, <code class="inline">async let</code> concurrency, <code class="inline">Task</code> loops, <code class="inline">@MainActor</code></li>
+    <li><strong>Process</strong> — login shells, pipes, and the 64KB deadlock everyone hits</li>
+    <li><strong>Codable</strong> — typed JSON decoding and the adapter pattern</li>
+    <li><strong>SwiftUI</strong> — declarative views, <code class="inline">@Published</code>/<code class="inline">@State</code>/<code class="inline">@AppStorage</code>/Bindings, <code class="inline">MenuBarExtra</code></li>
+  </ul>
+
+  <h3>Exercises — make it yours</h3>
+  <ol>
+    <li><strong>Add pip support.</strong> Write <code class="inline">PipClient</code> using
+      <code class="inline">pip list --format=json</code> and <code class="inline">pip list --outdated --format=json</code>,
+      then add a <code class="inline">case pip</code> to <code class="inline">PackageManager</code> —
+      and let the compiler walk you through every switch that needs a new arm.</li>
+    <li><strong>Notifications.</strong> Use the <code class="inline">UserNotifications</code> framework to
+      alert when a scheduled check finds something newly deprecated.</li>
+    <li><strong>Pinning.</strong> Let users exclude packages from "Update All."
+      Hint: persist a <code class="inline">Set&lt;String&gt;</code> of pinned ids.</li>
+    <li><strong>Cask support.</strong> The brew JSON already includes a
+      <code class="inline">casks</code> array — decode it and merge GUI apps into the list.</li>
+  </ol>
+
+  <div class="checkpoint">
+    <div class="c-title">🎓 Done!</div>
+    <p>You built a genuinely useful native macOS app — about 700 lines of Swift, no Xcode,
+    no dependencies. The full annotated source lives in <code class="inline">~/Developer/DepDeck</code>
+    and the written version of this tutorial in <code class="inline">TUTORIAL.md</code>.</p>
+  </div>
+
+  <div class="quiz" data-answer="2">
+    <div class="quiz-tag">Final check</div>
+    <p class="quiz-q">You add <code class="inline">case pip</code> to <code class="inline">PackageManager</code>. What happens on the next build?</p>
+    <button class="quiz-opt">It compiles fine; pip support is automatic</button>
+    <button class="quiz-opt">A runtime crash the first time a pip package appears</button>
+    <button class="quiz-opt">Compile errors at every non-exhaustive switch — a to-do list for the feature</button>
+    <div class="quiz-feedback"></div>
+  </div>
+</section>
+
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ───────── Swift syntax highlighting ───────── */
+  var KEYWORDS = new Set(("import let var func return if else guard switch case default for while in " +
+    "struct class enum protocol extension private public internal static final some any nil true false " +
+    "try await async throws throw catch do defer continue break self Self init deinit where weak unowned " +
+    "as is typealias associatedtype lazy mutating override required convenience open fileprivate inout indirect").split(" "));
+
+  function esc(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function highlightLine(line) {
+    var out = "";
+    var i = 0, n = line.length;
+    while (i < n) {
+      var ch = line[i];
+      // line comment
+      if (ch === "/" && line[i + 1] === "/") {
+        out += '<span class="tk-com">' + esc(line.slice(i)) + "</span>";
+        break;
+      }
+      // string literal (handles \( interpolation naively by passing through)
+      if (ch === '"') {
+        var j = i + 1;
+        while (j < n) {
+          if (line[j] === "\\") { j += 2; continue; }
+          if (line[j] === '"') { j++; break; }
+          j++;
+        }
+        out += '<span class="tk-str">' + esc(line.slice(i, j)) + "</span>";
+        i = j;
+        continue;
+      }
+      // attribute
+      if (ch === "@") {
+        var m = /^@\w+/.exec(line.slice(i));
+        if (m) {
+          out += '<span class="tk-attr">' + esc(m[0]) + "</span>";
+          i += m[0].length;
+          continue;
+        }
+      }
+      // number
+      if (/[0-9]/.test(ch) && !/[\w]/.test(line[i - 1] || "")) {
+        var mn = /^[0-9][0-9_]*(\.[0-9]+)?/.exec(line.slice(i));
+        if (mn) {
+          out += '<span class="tk-num">' + esc(mn[0]) + "</span>";
+          i += mn[0].length;
+          continue;
+        }
+      }
+      // identifier / keyword / type
+      if (/[A-Za-z_]/.test(ch)) {
+        var mw = /^[A-Za-z_][A-Za-z0-9_]*/.exec(line.slice(i));
+        var word = mw[0];
+        if (KEYWORDS.has(word)) {
+          out += '<span class="tk-kw">' + word + "</span>";
+        } else if (/^[A-Z]/.test(word)) {
+          out += '<span class="tk-type">' + word + "</span>";
+        } else {
+          out += esc(word);
+        }
+        i += word.length;
+        continue;
+      }
+      out += esc(ch);
+      i++;
+    }
+    return out;
+  }
+
+  /* ───────── Render code blocks ───────── */
+  document.querySelectorAll(".codeblock").forEach(function (block) {
+    var src = block.querySelector("script");
+    var raw = src.textContent.replace(/^\n+/, "").replace(/\s+$/, "");
+    var lines = raw.split("\n");
+
+    var notes = {};
+    block.querySelectorAll(".note").forEach(function (note) {
+      notes[parseInt(note.dataset.line, 10)] = note.innerHTML;
+      note.remove();
+    });
+    src.remove();
+
+    var head = document.createElement("div");
+    head.className = "code-head";
+    head.innerHTML = "<span>" + (block.dataset.title || "Swift") + "</span>";
+    var copy = document.createElement("button");
+    copy.className = "copy-btn";
+    copy.textContent = "Copy";
+    copy.addEventListener("click", function () {
+      navigator.clipboard.writeText(raw).then(function () {
+        copy.textContent = "Copied ✓";
+        setTimeout(function () { copy.textContent = "Copy"; }, 1500);
+      });
+    });
+    head.appendChild(copy);
+    block.appendChild(head);
+
+    var body = document.createElement("div");
+    body.className = "code-body";
+    lines.forEach(function (lineText, idx) {
+      var num = idx + 1;
+      var line = document.createElement("div");
+      line.className = "line";
+      line.innerHTML = '<span class="ln">' + num + '</span><span class="lc">' +
+        (highlightLine(lineText) || "&nbsp;") + "</span>";
+
+      var noteHTML = notes[num];
+      body.appendChild(line);
+      if (noteHTML) {
+        line.classList.add("has-note");
+        var noteRow = document.createElement("div");
+        noteRow.className = "note-row";
+        noteRow.innerHTML = noteHTML;
+        body.appendChild(noteRow);
+        line.addEventListener("click", function () {
+          var open = noteRow.classList.toggle("open");
+          line.classList.toggle("note-open", open);
+        });
+      }
+    });
+    block.appendChild(body);
+
+    if (Object.keys(notes).length) {
+      var hint = document.createElement("div");
+      hint.className = "annot-hint";
+      hint.innerHTML = "<b>●</b> " + Object.keys(notes).length +
+        " annotated line" + (Object.keys(notes).length > 1 ? "s" : "") +
+        " — click a highlighted line number to learn why it matters";
+      block.appendChild(hint);
+    }
+  });
+
+  /* ───────── Quizzes ───────── */
+  document.querySelectorAll(".quiz").forEach(function (quiz) {
+    var answer = parseInt(quiz.dataset.answer, 10);
+    var opts = quiz.querySelectorAll(".quiz-opt");
+    var feedback = quiz.querySelector(".quiz-feedback");
+    opts.forEach(function (opt, idx) {
+      opt.addEventListener("click", function () {
+        if (idx === answer) {
+          opts.forEach(function (o) { o.disabled = true; });
+          opt.classList.add("correct");
+          feedback.textContent = "✓ Correct!";
+          feedback.className = "quiz-feedback show ok";
+        } else {
+          opt.classList.add("wrong");
+          opt.disabled = true;
+          feedback.textContent = "Not quite — try another answer.";
+          feedback.className = "quiz-feedback show no";
+          setTimeout(function () { opt.classList.remove("wrong"); }, 400);
+        }
+      });
+    });
+  });
+
+  /* ───────── Chapters, nav, progress ───────── */
+  var chapters = Array.prototype.slice.call(document.querySelectorAll(".chapter"));
+  var nav = document.getElementById("nav");
+  var main = document.getElementById("main");
+  var STORAGE_KEY = "depdeck-tutorial-progress";
+
+  function loadDone() {
+    try { return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]")); }
+    catch (e) { return new Set(); }
+  }
+  var done = loadDone();
+
+  function saveDone() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(done)));
+  }
+
+  var current = 0;
+  var links = [];
+
+  chapters.forEach(function (ch, idx) {
+    var btn = document.createElement("button");
+    btn.className = "chap-link";
+    btn.innerHTML = '<span class="chap-num">' + (idx + 1) + "</span><span>" +
+      ch.dataset.title + "</span>";
+    btn.addEventListener("click", function () { show(idx); });
+    nav.appendChild(btn);
+    links.push(btn);
+  });
+
+  // prev/next buttons per chapter
+  chapters.forEach(function (ch, idx) {
+    var navRow = document.createElement("div");
+    navRow.className = "chapter-nav";
+    var prev = document.createElement("button");
+    prev.className = "nav-btn";
+    prev.textContent = "← Previous";
+    prev.disabled = idx === 0;
+    prev.addEventListener("click", function () { show(idx - 1); });
+    var next = document.createElement("button");
+    next.className = "nav-btn primary";
+    next.textContent = idx === chapters.length - 1 ? "Finish 🎉" : "Complete & Continue →";
+    next.addEventListener("click", function () {
+      done.add(ch.dataset.id);
+      saveDone();
+      render();
+      if (idx < chapters.length - 1) show(idx + 1);
+    });
+    navRow.appendChild(prev);
+    navRow.appendChild(next);
+    ch.appendChild(navRow);
+  });
+
+  function render() {
+    var doneCount = 0;
+    chapters.forEach(function (ch, idx) {
+      var isDone = done.has(ch.dataset.id);
+      if (isDone) doneCount++;
+      links[idx].classList.toggle("done", isDone);
+      if (isDone) links[idx].querySelector(".chap-num").textContent = "✓";
+      else links[idx].querySelector(".chap-num").textContent = idx + 1;
+      links[idx].classList.toggle("active", idx === current);
+    });
+    var pct = Math.round((doneCount / chapters.length) * 100);
+    document.getElementById("progress-fill").style.width = pct + "%";
+    document.getElementById("progress-pct").textContent = pct + "%";
+  }
+
+  function show(idx) {
+    if (idx < 0 || idx >= chapters.length) return;
+    current = idx;
+    chapters.forEach(function (ch, i) {
+      ch.classList.toggle("visible", i === idx);
+    });
+    main.scrollTop = 0;
+    render();
+  }
+
+  document.getElementById("reset-btn").addEventListener("click", function () {
+    done.clear();
+    saveDone();
+    render();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowRight") show(current + 1);
+    if (e.key === "ArrowLeft") show(current - 1);
+  });
+
+  // resume where the reader left off: first not-done chapter
+  var resume = chapters.findIndex(function (ch) { return !done.has(ch.dataset.id); });
+  show(resume === -1 ? chapters.length - 1 : resume);
+})();
+</script>
+</body>
+</html>
