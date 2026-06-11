@@ -5,6 +5,7 @@
 #   ./academy progress          scoreboard for all stages
 #   ./academy run               launch YOUR windowed app
 #   ./academy focus             start a lockdown study session (FocusLock)
+#   ./academy unlock            EMERGENCY: kill FocusLock and end the session
 #   ./academy hint <stage>      a nudge, not the answer
 #   ./academy solution <stage>  full reference solution (last resort!)
 
@@ -42,9 +43,23 @@ case "$1" in
     ;;
 
   focus)
-    bold "Building and launching FocusLock…"
-    echo "Tip: close Claude Code / ChatGPT first — the watchdog pauses your timer while any LLM is running."
-    swift run FocusLock
+    # FocusLock lives in its own repo now: ~/Developer/FocusLock
+    if command -v focuslock >/dev/null 2>&1; then
+      focuslock start
+    elif [[ -d "$HOME/Developer/FocusLock" ]]; then
+      (cd "$HOME/Developer/FocusLock" && swift run FocusLock)
+    else
+      echo "FocusLock isn't installed — clone it to ~/Developer/FocusLock first."
+      exit 1
+    fi
+    ;;
+
+  unlock)
+    if pkill -f "FocusLock" 2>/dev/null; then
+      bold "🆘 FocusLock terminated — you're free."
+    else
+      echo "FocusLock wasn't running."
+    fi
     ;;
 
   hint)
@@ -132,7 +147,7 @@ EOF
 
   *)
     bold "DepDeck Academy"
-    sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'
     echo
     echo "Start with GUIDE.md, then: ./academy check 1"
     ;;

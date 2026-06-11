@@ -136,20 +136,36 @@ screen lights up if anything on your system is deprecated.
 
 ## Focus mode — `./academy focus` 🔒
 
-Built for ADHD brains and LLM temptation. FocusLock runs timed lockdown
-sessions while you work through the stages:
+FocusLock is its own app now (repo: `~/Developer/FocusLock`, CLI:
+`focuslock`) — `./academy focus` just launches it. Built for ADHD brains and
+LLM temptation, and deliberately minimal: **a timer plus a distraction
+blocker, nothing else**. Every app on your Mac stays usable during a session.
 
-- **Pick a length** (25/45/60/90 min) and **allowlist** your terminal and
-  editor. The session window floats in the corner with the countdown.
-- **Switch to any other app** → instant fullscreen lock screen, the app gets
-  hidden, and you're bounced back to your editor. Every attempt is counted.
+- **Pick a length** (25/45/60/90 min) and lock in. The timer window floats
+  in the corner.
 - **Open an LLM** (Claude desktop, ChatGPT, Perplexity — or Claude Code in a
   terminal) → the screen goes red and **the timer pauses**. No credit for
   cheated minutes. Close it and the session resumes automatically.
-- **Need the tutorial?** Don't unlock a browser — FocusLock has a built-in
-  offline viewer for it ("Open Tutorial" button).
-- **⌘Q is a confession**: quitting mid-session requires typing
-  *"I am choosing to stop early"*. Friction, not handcuffs.
+- **Browsers work normally** for searching, documentation, **YouTube and
+  music** (allowed on purpose — concentration fuel). Only social media
+  (Instagram, X, TikTok, Reddit, Discord…) and LLM sites (claude.ai,
+  chatgpt.com…) get **redirected back to the Tutorial** and counted. The
+  first time, macOS will ask you to allow FocusLock to control your browser
+  (System Settings → Privacy & Security → Automation) — say yes, or the
+  browser stays locked. The blocklist is a plain table at the top of
+  `Sources/FocusLock/SessionModel.swift` — edit it as your weaknesses evolve.
+- **Ending early is one click** (⌘Q or the End button shows a simple
+  confirmation — no typing rituals).
+
+**Safety nets** (so the lock can never trap you):
+
+- **Pre-flight check**: "Lock in" refuses to start while an LLM is already
+  running and lists exactly what to close first — no instant red screen.
+- **Grace button**: the red LLM screen has *"Give me 30 seconds to close it"* —
+  drops you back to your terminal with the timer still paused.
+- **Emergency killswitch**, three ways: the red **SOS button on every lock
+  screen**, **⌘⇧Esc** anywhere in FocusLock, or `./academy unlock` from any
+  terminal. All end the session immediately, no confession phrase needed.
 
 Honest limits: this is a commitment device, not a prison. `killall FocusLock`
 from your (allowed) terminal beats it, and your phone exists. Its job is to
