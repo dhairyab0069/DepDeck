@@ -2,7 +2,8 @@
 # depdeck — CLI launcher for the DepDeck menu bar app.
 # Usage: depdeck [start|stop|restart|status|build]   (no argument = start)
 
-APP_DIR="$HOME/Developer/DepDeck"
+# The repo this script lives in (symlinks resolved), unless DEPDECK_DIR says otherwise.
+APP_DIR="${DEPDECK_DIR:-${0:A:h:h}}"
 BIN="$APP_DIR/.build/release/DepDeck"
 
 running_pid() { pgrep -f "$BIN" 2>/dev/null | head -1 }
