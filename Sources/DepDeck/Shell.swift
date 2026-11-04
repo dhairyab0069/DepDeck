@@ -13,6 +13,12 @@ enum ShellError: LocalizedError {
 }
 
 enum Shell {
+    /// Wraps `value` in single quotes for a shell command line (a literal `'` becomes `'\''`),
+    /// so names and queries are passed as one argument and never interpreted.
+    static func quote(_ value: String) -> String {
+        "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'"
+    }
+
     /// Runs a command through a login shell so brew/cargo/npm are on PATH.
     @discardableResult
     static func run(_ command: String) async throws -> String {
@@ -35,14 +41,15 @@ enum Shell {
                 }
 
                 // Drain both pipes concurrently so neither fills and blocks the process.
-                var errData = Data()
+                let errBox = DataBox()
                 let errDone = DispatchSemaphore(value: 0)
                 DispatchQueue.global(qos: .userInitiated).async {
-                    errData = stderr.fileHandleForReading.readDataToEndOfFile()
+                    errBox.data = stderr.fileHandleForReading.readDataToEndOfFile()
                     errDone.signal()
                 }
                 let outData = stdout.fileHandleForReading.readDataToEndOfFile()
                 errDone.wait()
+                let errData = errBox.data
                 process.waitUntilExit()
 
                 let out = String(data: outData, encoding: .utf8) ?? ""
@@ -60,4 +67,9 @@ enum Shell {
             }
         }
     }
+}
+
+/// Hands the stderr bytes from the draining queue back to the caller; the semaphore orders the accesses.
+private final class DataBox: @unchecked Sendable {
+    var data = Data()
 }

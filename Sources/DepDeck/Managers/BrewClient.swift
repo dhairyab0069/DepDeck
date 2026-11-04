@@ -26,6 +26,12 @@ struct BrewClient {
 
     func installedPackages() async throws -> [Package] {
         let json = try await Shell.run("brew info --json=v2 --installed")
+        return try Self.parseInstalled(json)
+    }
+
+    /// Turns the output of `brew info --json=v2 --installed` into packages
+    /// (formulae that are not actually installed are skipped).
+    static func parseInstalled(_ json: String) throws -> [Package] {
         guard let data = json.data(using: .utf8) else { return [] }
         let response = try JSONDecoder().decode(InfoResponse.self, from: data)
 
@@ -55,24 +61,28 @@ struct BrewClient {
     }
 
     func search(_ query: String) async throws -> [SearchResult] {
-        let escaped = query.replacingOccurrences(of: "'", with: "")
-        let output = try await Shell.run("brew search --formula '\(escaped)'")
-        return output
+        let output = try await Shell.run("brew search --formula \(Shell.quote(query))")
+        return Self.parseSearch(output)
+    }
+
+    /// `brew search` prints one formula per line, with `==>` section headings when it searches several kinds.
+    static func parseSearch(_ output: String) -> [SearchResult] {
+        output
             .split(separator: "\n")
-            .map(String.init)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty && !$0.hasPrefix("==>") }
             .map { SearchResult(manager: .brew, name: $0) }
     }
 
     func install(_ name: String) async throws {
-        try await Shell.run("brew install '\(name)'")
+        try await Shell.run("brew install \(Shell.quote(name))")
     }
 
     func upgrade(_ name: String) async throws {
-        try await Shell.run("brew upgrade '\(name)'")
+        try await Shell.run("brew upgrade \(Shell.quote(name))")
     }
 
     func uninstall(_ name: String) async throws {
-        try await Shell.run("brew uninstall '\(name)'")
+        try await Shell.run("brew uninstall \(Shell.quote(name))")
     }
 }

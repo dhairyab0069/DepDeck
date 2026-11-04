@@ -10,7 +10,7 @@ something breaks. No Xcode needed — just a terminal and any text editor.
 Every change follows the same three steps:
 
 ```sh
-cd ~/Developer/DepDeck
+cd /path/to/DepDeck   # wherever you cloned it
 
 # 1. Edit a file (any editor — VS Code, vim, TextEdit)
 # 2. Rebuild
@@ -100,7 +100,7 @@ change `store.refresh(updateIndex: true)` to `updateIndex: false`.
 | Everything is broken, panic | `git log --oneline` then `git reset --hard <last-good-commit>` and rebuild. |
 
 The app writes nothing outside its own folder except UserDefaults (settings) and
-the packages you tell it to install/remove — deleting `~/Developer/DepDeck`
+the packages you tell it to install/remove — deleting your clone of the repo
 removes it completely (plus the LaunchAgent below, if you installed it).
 
 ---
@@ -110,7 +110,7 @@ removes it completely (plus the LaunchAgent below, if you installed it).
 The repo is already a git repository. Before *any* experiment:
 
 ```sh
-cd ~/Developer/DepDeck
+cd /path/to/DepDeck
 git add -A && git commit -m "what I'm about to change and why"
 ```
 

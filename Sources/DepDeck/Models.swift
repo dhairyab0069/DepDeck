@@ -14,14 +14,6 @@ enum PackageManager: String, CaseIterable, Identifiable {
         case .cargo: return "cargo"
         }
     }
-
-    var badgeColor: String {
-        switch self {
-        case .brew: return "orange"
-        case .npm: return "red"
-        case .cargo: return "brown"
-        }
-    }
 }
 
 struct Package: Identifiable, Hashable {
